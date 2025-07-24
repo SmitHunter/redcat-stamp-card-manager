@@ -41,10 +41,17 @@ BASE_URL = CONFIG["api"]["base_url"]
 def login(username, password):
     url = f"{BASE_URL}/login"
     payload = {"username": username, "psw": password, "auth_type": CONFIG["api"]["auth_type"]}
-    r = requests.post(url, json=payload)
-    r.raise_for_status()
-    response_data = r.json()
-    return response_data["token"]
+    try:
+        r = requests.post(url, json=payload)
+        r.raise_for_status()
+        response_data = r.json()
+        if "token" not in response_data:
+            raise ValueError(f"Login response missing token. Response: {response_data}")
+        return response_data["token"]
+    except requests.exceptions.RequestException as e:
+        raise ValueError(f"Login request failed: {e}")
+    except KeyError as e:
+        raise ValueError(f"Login response missing expected field: {e}. Response: {response_data}")
 
 def find_stampcard_recid(token, member_id):
     """
@@ -272,8 +279,17 @@ class StampCardApp(ctk.CTk):
             password = self.password_entry.get().strip()
             mid = int(self.member_id_entry.get().strip())
             
+            if not username or not password:
+                self.log("❌ Error: Username and password are required")
+                return
+            
             self.log("🔐 Logging in...")
-            token = login(username, password)
+            try:
+                token = login(username, password)
+                self.log("✅ Login successful")
+            except Exception as login_error:
+                self.log(f"❌ Login failed: {login_error}")
+                return
             
             self.log("📡 Fetching stamp card...")
             data = get_stampcard(token, mid)
@@ -309,7 +325,12 @@ class StampCardApp(ctk.CTk):
             coupon_id_str = self.coupon_id_entry.get().strip()
 
             self.log("🔐 Logging in...")
-            token = login(username, password)
+            try:
+                token = login(username, password)
+                self.log("✅ Login successful")
+            except Exception as login_error:
+                self.log(f"❌ Login failed: {login_error}")
+                return
 
             # Get current data to preserve cards_filled and rewards_earned
             current_data = get_stampcard(token, mid)
