@@ -109,7 +109,7 @@ class StampCardApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title(f"Stamp Card Manager - {CONFIG['business']['name']}")
-        self.geometry("600x850")
+        self.geometry("600x950")
         self.configure(fg_color="#1E1E1E")
         self.resizable(False, False)
 
@@ -196,9 +196,12 @@ class StampCardApp(ctk.CTk):
         self.update_button.pack(pady=20)
 
         # -- Output Log --
-        self.output_box = ctk.CTkTextbox(frame, height=120, width=540, wrap="word", state="disabled")
-        self.output_box.pack(pady=10)
-        self.output_box.configure(fg_color="#1E1E1E")
+        log_label = ctk.CTkLabel(frame, text="📋 Activity Log", font=("Arial", 12, "bold"))
+        log_label.pack(pady=(10, 5))
+        
+        self.output_box = ctk.CTkTextbox(frame, height=200, width=540, wrap="word", state="disabled")
+        self.output_box.pack(pady=(0, 10), fill="x", expand=False)
+        self.output_box.configure(fg_color="#0D1117", text_color="#E6EDF3", font=("Consolas", 11))
         
         # -- Info Section (at bottom) --
         info_frame = ctk.CTkFrame(frame, fg_color="#404040", corner_radius=10)
