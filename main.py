@@ -1,17 +1,46 @@
 import customtkinter as ctk
 import requests
+import json
+import os
 
 # --- Theme Setup ---
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("dark-blue")
 
-# --- API Base URL ---
-BASE_URL = "https://danielsdonuts.redcatcloud.com.au/api/v1"
+# --- Configuration Loading ---
+def load_config():
+    """Load configuration from config.json"""
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    try:
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Default configuration if file doesn't exist
+        return {
+            "api": {
+                "base_url": "https://your-api-url.com/api/v1",
+                "auth_type": "U"
+            },
+            "business": {
+                "name": "Your Business",
+                "stamps_per_card": 4,
+                "default_coupon_id": 230,
+                "default_coupon_name": "Reward Coupon"
+            },
+            "ui": {
+                "stamp_emoji": "🍩",
+                "empty_slot_emoji": "⭕"
+            }
+        }
+
+# Load configuration
+CONFIG = load_config()
+BASE_URL = CONFIG["api"]["base_url"]
 
 # --- API Helpers ---
 def login(username, password):
     url = f"{BASE_URL}/login"
-    payload = {"username": username, "psw": password, "auth_type": "U"}
+    payload = {"username": username, "psw": password, "auth_type": CONFIG["api"]["auth_type"]}
     r = requests.post(url, json=payload)
     r.raise_for_status()
     response_data = r.json()
@@ -79,15 +108,28 @@ def update_stampcard(token, member_id, stamps, cards_filled, rewards_earned):
 class StampCardApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Stamp Card Manager")
-        self.geometry("600x800")
+        self.title(f"Stamp Card Manager - {CONFIG['business']['name']}")
+        self.geometry("600x850")
         self.configure(fg_color="#1E1E1E")
         self.resizable(False, False)
 
         self.token = None
+        self.stamps_per_card = CONFIG["business"]["stamps_per_card"]
 
         frame = ctk.CTkFrame(self, fg_color="#1E1E1E")
         frame.pack(expand=True, padx=20, pady=20, fill="both")
+
+        # -- Configuration Info --
+        config_frame = ctk.CTkFrame(frame, fg_color="#404040", corner_radius=10)
+        config_frame.pack(pady=(10, 15), padx=20, fill="x")
+        
+        config_title = ctk.CTkLabel(config_frame, text="⚙️ Current Configuration", font=("Arial", 12, "bold"))
+        config_title.pack(pady=(8, 5))
+        
+        config_info = ctk.CTkLabel(config_frame, 
+            text=f"Business: {CONFIG['business']['name']}\nStamps per card: {self.stamps_per_card}\nAPI: {BASE_URL}", 
+            font=("Arial", 10), justify="left", text_color="#CCCCCC")
+        config_info.pack(pady=(0, 8))
 
         # -- Credentials --
         self.username_entry = ctk.CTkEntry(frame, placeholder_text="API Username", width=300)
@@ -108,21 +150,26 @@ class StampCardApp(ctk.CTk):
         stamp_title = ctk.CTkLabel(self.stamp_card_frame, text="🎫 Stamp Card", font=("Arial", 16, "bold"))
         stamp_title.pack(pady=(10, 5))
         
-        # Grid for stamps (assuming 10 stamps per card)
+        # Grid for stamps (dynamic based on config)
         self.stamps_grid_frame = ctk.CTkFrame(self.stamp_card_frame, fg_color="transparent")
         self.stamps_grid_frame.pack(pady=5)
         
         self.stamp_labels = []
-        for i in range(4):  # 4 stamps per card
-            stamp_label = ctk.CTkLabel(self.stamps_grid_frame, text="⭕", font=("Arial", 30), width=50, height=50)
-            stamp_label.grid(row=0, column=i, padx=10, pady=5)
+        # Create stamps in rows of up to 5 per row
+        max_per_row = 5
+        for i in range(self.stamps_per_card):
+            row = i // max_per_row
+            col = i % max_per_row
+            stamp_label = ctk.CTkLabel(self.stamps_grid_frame, text=CONFIG["ui"]["empty_slot_emoji"], 
+                                     font=("Arial", 30), width=50, height=50)
+            stamp_label.grid(row=row, column=col, padx=8, pady=5)
             self.stamp_labels.append(stamp_label)
         
         # Info labels
         self.info_frame = ctk.CTkFrame(self.stamp_card_frame, fg_color="transparent")
         self.info_frame.pack(pady=(5, 10))
         
-        self.stamps_info = ctk.CTkLabel(self.info_frame, text="Stamps: 0/4", font=("Arial", 12))
+        self.stamps_info = ctk.CTkLabel(self.info_frame, text=f"Stamps: 0/{self.stamps_per_card}", font=("Arial", 12))
         self.stamps_info.pack()
         
         self.cards_info = ctk.CTkLabel(self.info_frame, text="Cards Completed: 0 | Rewards Earned: 0", font=("Arial", 12))
@@ -132,18 +179,18 @@ class StampCardApp(ctk.CTk):
         self.status_info.pack()
 
         # -- Stamp Card Fields --
-        stamps_label = ctk.CTkLabel(frame, text="Update Current Stamps (0-4):", font=("Arial", 12, "bold"))
+        stamps_label = ctk.CTkLabel(frame, text=f"Update Current Stamps (0-{self.stamps_per_card}):", font=("Arial", 12, "bold"))
         stamps_label.pack(pady=(15, 2))
         self.stamps_entry = ctk.CTkEntry(frame, placeholder_text="Number of stamps on current card", width=300)
         self.stamps_entry.pack(pady=2)
         
-        # Add coupon ID field for when 4/4 stamps are reached
-        coupon_label = ctk.CTkLabel(frame, text="Coupon ID (for 4/4 stamp rewards):", font=("Arial", 12))
+        # Add coupon ID field for when stamps are completed
+        coupon_label = ctk.CTkLabel(frame, text=f"Coupon ID (for {self.stamps_per_card}/{self.stamps_per_card} stamp rewards):", font=("Arial", 12))
         coupon_label.pack(pady=(10, 2))
-        self.coupon_id_entry = ctk.CTkEntry(frame, placeholder_text="5th Visit Freebie", width=300)
+        self.coupon_id_entry = ctk.CTkEntry(frame, placeholder_text=CONFIG["business"]["default_coupon_name"], width=300)
         self.coupon_id_entry.pack(pady=2)
         # Set default coupon ID
-        self.coupon_id_entry.insert(0, "230")
+        self.coupon_id_entry.insert(0, str(CONFIG["business"]["default_coupon_id"]))
 
         self.update_button = ctk.CTkButton(frame, text="Update Stamp Card", command=self.update_stampcard)
         self.update_button.pack(pady=20)
@@ -161,7 +208,7 @@ class StampCardApp(ctk.CTk):
         info_title.pack(pady=(10, 5))
         
         info_text = ctk.CTkLabel(info_frame, 
-            text="• 1-3 Stamps: Updates normally\n• 4/4 Stamps: Auto-assigns '5th Visit Freebie' coupon\n• Card resets to 0/4 after reward is given", 
+            text=f"• 1-{self.stamps_per_card-1} Stamps: Updates normally\n• {self.stamps_per_card}/{self.stamps_per_card} Stamps: Auto-assigns reward coupon\n• Card resets to 0/{self.stamps_per_card} after reward is given", 
             font=("Arial", 11), justify="left", text_color="#CCCCCC")
         info_text.pack(pady=(0, 10))
 
@@ -177,24 +224,24 @@ class StampCardApp(ctk.CTk):
         cards_filled = data["no_of_cards_filled"]
         rewards_earned = data["no_of_rewards_earned"]
         
-        # Update stamp grid (4 stamps max)
+        # Update stamp grid (dynamic based on config)
         for i, label in enumerate(self.stamp_labels):
             if i < num_stamps:
-                label.configure(text="🍩", text_color="#000000")  # Donut stamp in black
+                label.configure(text=CONFIG["ui"]["stamp_emoji"], text_color="#000000")  # Filled stamp in black
             else:
-                label.configure(text="⭕", text_color="#666666")  # Empty slot in gray
+                label.configure(text=CONFIG["ui"]["empty_slot_emoji"], text_color="#666666")  # Empty slot in gray
         
         # Update info labels
-        self.stamps_info.configure(text=f"Stamps: {num_stamps}/4")
+        self.stamps_info.configure(text=f"Stamps: {num_stamps}/{self.stamps_per_card}")
         self.cards_info.configure(text=f"Cards Completed: {cards_filled} | Rewards Earned: {rewards_earned}")
         
-        # Update status
-        if num_stamps == 4:
+        # Update status (dynamic based on stamps_per_card)
+        if num_stamps == self.stamps_per_card:
             self.status_info.configure(text="🎉 CARD COMPLETE! Ready for reward!", text_color="#00FF00")
-        elif num_stamps == 3:
+        elif num_stamps == self.stamps_per_card - 1:
             self.status_info.configure(text="⚡ One more stamp needed!", text_color="#FFA500")
         elif num_stamps > 0:
-            self.status_info.configure(text=f"🔥 {4-num_stamps} stamps to go!", text_color="#87CEEB")
+            self.status_info.configure(text=f"🔥 {self.stamps_per_card-num_stamps} stamps to go!", text_color="#87CEEB")
         else:
             self.status_info.configure(text="📍 Start collecting stamps!", text_color="#CCCCCC")
 
@@ -266,10 +313,10 @@ class StampCardApp(ctk.CTk):
             current_cards = current_data["no_of_cards_filled"]
             current_rewards = current_data["no_of_rewards_earned"]
 
-            # Check if stamps are being set to 4 (card completion)
-            if stamps == 4:
+            # Check if stamps are being set to max (card completion)
+            if stamps == self.stamps_per_card:
                 if not coupon_id_str:
-                    self.log("❌ Error: Coupon ID required when completing a stamp card (4/4 stamps)")
+                    self.log(f"❌ Error: Coupon ID required when completing a stamp card ({self.stamps_per_card}/{self.stamps_per_card} stamps)")
                     return
                 
                 coupon_id = int(coupon_id_str)
@@ -286,13 +333,13 @@ class StampCardApp(ctk.CTk):
                 final_cards = current_cards + 1
                 final_rewards = current_rewards + 1
                 
-                self.log(f"🔄 Resetting stamps to 0/4 (Card #{final_cards} completed)")
+                self.log(f"🔄 Resetting stamps to 0/{self.stamps_per_card} (Card #{final_cards} completed)")
             else:
                 # Normal stamp update (1, 2, or 3 stamps)
                 final_stamps = stamps
                 final_cards = current_cards
                 final_rewards = current_rewards
-                self.log(f"🛠️ Updating stamps to {stamps}/4...")
+                self.log(f"🛠️ Updating stamps to {stamps}/{self.stamps_per_card}...")
 
             # Update the stamp card
             upd = update_stampcard(token, mid, final_stamps, final_cards, final_rewards)
