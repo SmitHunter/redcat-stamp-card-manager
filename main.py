@@ -79,7 +79,7 @@ def update_stampcard(token, member_id, stamps, cards_filled, rewards_earned):
 class StampCardApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("Polygon Stamp Card Manager")
+        self.title("Stamp Card Manager")
         self.geometry("600x800")
         self.configure(fg_color="#1E1E1E")
         self.resizable(False, False)
@@ -89,8 +89,8 @@ class StampCardApp(ctk.CTk):
         frame = ctk.CTkFrame(self, fg_color="#1E1E1E")
         frame.pack(expand=True, padx=20, pady=20, fill="both")
 
-        # -- Credentials (hardcoded like coupon script) --
-        self.username_entry = ctk.CTkEntry(frame, placeholder_text="Polygon Username", width=300)
+        # -- Credentials --
+        self.username_entry = ctk.CTkEntry(frame, placeholder_text="API Username", width=300)
         self.username_entry.pack(pady=(10, 5))
         self.password_entry = ctk.CTkEntry(frame, placeholder_text="Password", show="*", width=300)
         self.password_entry.pack(pady=5)

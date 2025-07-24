@@ -1,6 +1,6 @@
-# Stamp Card Manager
+# Stamp Card Manager (SCM)
 
-A GUI application for managing digital stamp cards with automatic coupon assignment.
+A standalone GUI application for managing digital stamp cards with automatic coupon assignment.
 
 ## Features
 
@@ -30,7 +30,7 @@ A GUI application for managing digital stamp cards with automatic coupon assignm
 
 ## Usage
 
-1. Enter your Polygon API credentials
+1. Enter your API credentials
 2. Input a Member ID
 3. Click "Fetch Stamp Card" to load current data
 4. Update stamp count (0-4) and click "Update Stamp Card"
