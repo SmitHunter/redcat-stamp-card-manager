@@ -1,16 +1,16 @@
 {
   "api": {
-    "base_url": "https://danielsdonuts.redcatcloud.com.au/api/v1",
+    "base_url": "https://your-business.redcatcloud.com.au/api/v1",
     "auth_type": "U"
   },
   "business": {
-    "name": "Daniel's Donuts",
-    "stamps_per_card": 4,
-    "default_coupon_id": 230,
-    "default_coupon_name": "5th Visit Freebie"
+    "name": "Your Business Name",
+    "stamps_per_card": 10,
+    "default_coupon_id": 123,
+    "default_coupon_name": "Reward Coupon"
   },
   "ui": {
-    "stamp_emoji": "🍩",
+    "stamp_emoji": "⭐",
     "empty_slot_emoji": "⭕"
   }
 }

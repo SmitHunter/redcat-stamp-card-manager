@@ -1,6 +1,6 @@
-# Stamp Card Manager (SCM)
+# Redcat Stamp Card Manager
 
-A configurable GUI application for managing digital stamp cards with automatic coupon assignment. Supports any API-compatible loyalty system.
+A configurable GUI application for managing digital stamp cards with automatic coupon assignment. Supports RedCat Cloud API and similar loyalty systems.
 
 ## Features
 
@@ -22,22 +22,22 @@ A configurable GUI application for managing digital stamp cards with automatic c
 
 ## Configuration
 
-Before using SCM, you need to configure it for your business by editing `config.json`:
+Before using the Stamp Card Manager, you need to configure it for your business by editing `config.json`:
 
 ```json
 {
   "api": {
-    "base_url": "https://your-api-url.com/api/v1",
+    "base_url": "https://your-business.redcatcloud.com.au/api/v1",
     "auth_type": "U"
   },
   "business": {
     "name": "Your Business Name",
     "stamps_per_card": 10,
     "default_coupon_id": 123,
-    "default_coupon_name": "Free Coffee"
+    "default_coupon_name": "Reward Coupon"
   },
   "ui": {
-    "stamp_emoji": "☕",
+    "stamp_emoji": "⭐",
     "empty_slot_emoji": "⭕"
   }
 }
@@ -95,7 +95,7 @@ Compatible with RedCat Cloud API and similar loyalty system APIs:
 ```json
 {
   "business": {
-    "name": "Downtown Coffee",
+    "name": "Coffee Shop",
     "stamps_per_card": 10,
     "default_coupon_id": 101,
     "default_coupon_name": "Free Coffee"
@@ -111,13 +111,13 @@ Compatible with RedCat Cloud API and similar loyalty system APIs:
 ```json
 {
   "business": {
-    "name": "Mario's Pizza",
+    "name": "Restaurant",
     "stamps_per_card": 5,
     "default_coupon_id": 205,
-    "default_coupon_name": "Free Slice"
+    "default_coupon_name": "Free Meal"
   },
   "ui": {
-    "stamp_emoji": "🍕",
+    "stamp_emoji": "🍽️",
     "empty_slot_emoji": "⭕"
   }
 }
