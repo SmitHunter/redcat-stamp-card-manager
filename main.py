@@ -25,7 +25,8 @@ def load_config():
                 "name": "Your Business",
                 "stamps_per_card": 4,
                 "default_coupon_id": 230,
-                "default_coupon_name": "Reward Coupon"
+                "default_coupon_name": "Reward Coupon",
+                "allow_duplicate_coupons": true
             },
             "ui": {
                 "stamp_emoji": "🍩",
@@ -77,7 +78,7 @@ def get_stampcard(token, member_id):
     r.raise_for_status()
     return r.json()["data"]
 
-def assign_coupon(token, coupon_id, member_ids):
+def assign_coupon(token, coupon_id, member_ids, allow_duplicates=None):
     """Assign a coupon to members"""
     url = f"{BASE_URL}/coupons/{coupon_id}/create"
     headers = {
@@ -89,6 +90,11 @@ def assign_coupon(token, coupon_id, member_ids):
         "HandleErrors": True,
         "ReturnAlias": True
     }
+    
+    # Add create_duplicate parameter if specified
+    if allow_duplicates is not None:
+        payload["create_duplicate"] = allow_duplicates
+    
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
     return response.json()
@@ -347,9 +353,10 @@ class StampCardApp(ctk.CTk):
                 
                 self.log("🎉 Card completed! Generating coupon and resetting stamps...")
                 
-                # Assign coupon to member
-                self.log(f"🎫 Assigning coupon {coupon_id} to member {mid}...")
-                coupon_result = assign_coupon(token, coupon_id, [mid])
+                # Assign coupon to member with duplicate setting from config
+                allow_duplicates = CONFIG["business"].get("allow_duplicate_coupons", False)
+                self.log(f"🎫 Assigning coupon {coupon_id} to member {mid} (duplicates: {allow_duplicates})...")
+                coupon_result = assign_coupon(token, coupon_id, [mid], allow_duplicates)
                 self.log("✅ Coupon assigned successfully!")
                 
                 # Reset stamps to 0 and increment counters

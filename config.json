@@ -7,7 +7,8 @@
     "name": "Your Business Name",
     "stamps_per_card": 10,
     "default_coupon_id": 123,
-    "default_coupon_name": "Reward Coupon"
+    "default_coupon_name": "Reward Coupon",
+    "allow_duplicate_coupons": true
   },
   "ui": {
     "stamp_emoji": "⭐",
