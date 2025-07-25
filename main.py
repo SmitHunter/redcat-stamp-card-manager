@@ -122,13 +122,19 @@ class StampCardApp(ctk.CTk):
         self.title(f"Stamp Card Manager - {CONFIG['business']['name']}")
         self.geometry("600x950")
         self.configure(fg_color="#1E1E1E")
-        self.resizable(False, False)
+        self.resizable(True, True)
+        self.minsize(400, 600)
 
         self.token = None
         self.stamps_per_card = CONFIG["business"]["stamps_per_card"]
 
-        frame = ctk.CTkFrame(self, fg_color="#1E1E1E")
-        frame.pack(expand=True, padx=20, pady=20, fill="both")
+        # Create main scrollable container
+        main_container = ctk.CTkScrollableFrame(self, fg_color="#1E1E1E")
+        main_container.pack(expand=True, padx=10, pady=10, fill="both")
+        
+        # Main content frame inside scrollable container
+        frame = ctk.CTkFrame(main_container, fg_color="#1E1E1E")
+        frame.pack(expand=True, padx=10, pady=10, fill="both")
 
         # -- Configuration Info --
         config_frame = ctk.CTkFrame(frame, fg_color="#404040", corner_radius=10)
