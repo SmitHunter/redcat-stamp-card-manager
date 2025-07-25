@@ -79,21 +79,19 @@ def get_stampcard(token, member_id):
     return r.json()["data"]
 
 def assign_coupon(token, coupon_id, member_ids, allow_duplicates=None):
-    """Assign a coupon to members"""
-    url = f"{BASE_URL}/coupons/{coupon_id}/create"
+    """Assign a coupon to members using the asynchronous schedule endpoint"""
+    url = f"{BASE_URL}/coupons/{coupon_id}/schedule"
     headers = {
         "X-Redcat-Authtoken": token,
         "Content-Type": "application/json"
     }
     payload = {
-        "Members": member_ids,
-        "HandleErrors": True,
-        "ReturnAlias": True
+        "Members": member_ids
     }
     
-    # Add create_duplicate parameter if specified
+    # Add Multiple parameter if specified (for async endpoint)
     if allow_duplicates is not None:
-        payload["create_duplicate"] = allow_duplicates
+        payload["Multiple"] = allow_duplicates
     
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
@@ -204,6 +202,25 @@ class StampCardApp(ctk.CTk):
         self.coupon_id_entry.pack(pady=2)
         # Set default coupon ID
         self.coupon_id_entry.insert(0, str(CONFIG["business"]["default_coupon_id"]))
+        
+        # Add checkbox for allowing multiple coupons
+        self.allow_multiple_var = ctk.BooleanVar(value=CONFIG["business"].get("allow_duplicate_coupons", False))
+        self.allow_multiple_checkbox = ctk.CTkCheckBox(
+            frame, 
+            text="Allow multiple coupons for same member",
+            variable=self.allow_multiple_var,
+            font=("Arial", 11)
+        )
+        self.allow_multiple_checkbox.pack(pady=(5, 1))
+        
+        # Add info text for the checkbox
+        multiple_info = ctk.CTkLabel(
+            frame, 
+            text="ℹ️ When checked, members can receive the same coupon multiple times",
+            font=("Arial", 9), 
+            text_color="#888888"
+        )
+        multiple_info.pack(pady=(0, 5))
 
         self.update_button = ctk.CTkButton(frame, text="Update Stamp Card", command=self.update_stampcard)
         self.update_button.pack(pady=20)
@@ -224,7 +241,7 @@ class StampCardApp(ctk.CTk):
         info_title.pack(pady=(10, 5))
         
         info_text = ctk.CTkLabel(info_frame, 
-            text=f"• 1-{self.stamps_per_card-1} Stamps: Updates normally\n• {self.stamps_per_card}/{self.stamps_per_card} Stamps: Auto-assigns reward coupon\n• Card resets to 0/{self.stamps_per_card} after reward is given", 
+            text=f"• 1-{self.stamps_per_card-1} Stamps: Updates normally\n• {self.stamps_per_card}/{self.stamps_per_card} Stamps: Auto-assigns reward coupon\n• Card resets to 0/{self.stamps_per_card} after reward is given\n• Multiple coupons: Can be enabled to allow repeat rewards", 
             font=("Arial", 11), justify="left", text_color="#CCCCCC")
         info_text.pack(pady=(0, 10))
 
@@ -353,11 +370,16 @@ class StampCardApp(ctk.CTk):
                 
                 self.log("🎉 Card completed! Generating coupon and resetting stamps...")
                 
-                # Assign coupon to member with duplicate setting from config
-                allow_duplicates = CONFIG["business"].get("allow_duplicate_coupons", False)
-                self.log(f"🎫 Assigning coupon {coupon_id} to member {mid} (duplicates: {allow_duplicates})...")
+                # Assign coupon to member with duplicate setting from UI checkbox
+                allow_duplicates = self.allow_multiple_var.get()
+                self.log(f"🎫 Assigning coupon {coupon_id} to member {mid} (allow multiple: {allow_duplicates})...")
                 coupon_result = assign_coupon(token, coupon_id, [mid], allow_duplicates)
-                self.log("✅ Coupon assigned successfully!")
+                
+                # Check the response since this is asynchronous
+                if coupon_result.get("data") == "Coupons have been scheduled for creation":
+                    self.log("✅ Coupon assignment scheduled successfully!")
+                else:
+                    self.log("✅ Coupon assigned successfully!")
                 
                 # Reset stamps to 0 and increment counters
                 final_stamps = 0
